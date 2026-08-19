@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refresh Opportunity Scoring — FlyRank Search Intelligence</title>
+<style>
+:root {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --text: #172033;
+  --muted: #5f6b7a;
+  --line: #e4e7ec;
+  --accent: #2457d6;
+  --accent-soft: #eef3ff;
+  --good: #117a4b;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+}
+.container { max-width: 1050px; margin: 0 auto; padding: 32px 20px 70px; }
+.hero {
+  background: linear-gradient(135deg, #172033, #263b68);
+  color: white;
+  border-radius: 22px;
+  padding: 48px 42px;
+  margin-bottom: 28px;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: .78rem;
+  opacity: .78;
+  font-weight: 700;
+}
+h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.08; margin: 12px 0 18px; }
+.hero p { max-width: 820px; color: #dce5f5; font-size: 1.05rem; }
+.badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.badge {
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.08);
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: .86rem;
+}
+section {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 30px;
+  margin: 20px 0;
+}
+h2 { margin-top: 0; font-size: 1.65rem; }
+h3 { margin-bottom: 8px; }
+.muted { color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: 20px 0; }
+.stat {
+  background: var(--accent-soft);
+  border-radius: 14px;
+  padding: 18px;
+}
+.stat strong { display:block; font-size: 1.65rem; color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 18px 0; }
+th, td { padding: 12px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+th { background: #f8f9fc; }
+.callout {
+  border-left: 4px solid var(--accent);
+  background: #f5f7ff;
+  padding: 16px 18px;
+  border-radius: 8px;
+  margin: 18px 0;
+}
+.action {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 12px 0;
+}
+.action strong { color: var(--accent); }
+footer { color: var(--muted); text-align: center; padding-top: 28px; font-size: .9rem; }
+a { color: var(--accent); }
+.small { font-size: .9rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="hero">
+  <div class="eyebrow">FlyRank ML Internship · Applied Search Intelligence</div>
+  <h1>Refresh Opportunity Scoring</h1>
+  <p>
+    A decision-support model for prioritizing content items that should be reviewed first
+    for a potential refresh, using observed search-performance and recent-performance signals.
+  </p>
+  <div class="badges">
+    <span class="badge">30,000 content items</span>
+    <span class="badge">6 held-out clients</span>
+    <span class="badge">Random Forest</span>
+    <span class="badge">Human review required</span>
+  </div>
+</header>
+
+<section id="abstract">
+  <h2>Abstract</h2>
+  <p>
+    This study asks which content items should be reviewed first for a potential refresh based on
+    observed search-performance and recent-performance signals. A repeatable ranking workflow was
+    built from an anonymized FlyRank dataset, with identifiers and selected trend fields excluded
+    from modeling to reduce leakage risk. A client-held-out validation design compared a Random
+    Forest ranking against a transparent hand-written baseline using Precision@K. On the held-out
+    set, the Random Forest measured 0.90, 0.92, 0.84 and 0.86 Precision@K at K=10, 25, 50 and 100,
+    compared with 0.20, 0.16, 0.24 and 0.36 for the baseline. The result is a directional
+    decision-support queue for human review, not a causal estimate of the effect of refreshing
+    content.
+  </p>
+</section>
+
+<section id="introduction">
+  <h2>1. Introduction / Problem Statement</h2>
+  <p>
+    Content teams often need to decide which pages deserve attention first when review capacity
+    is limited. The decision supported here is:
+    <strong>prioritize content items for human review using a ranked queue and reason codes.</strong>
+  </p>
+  <div class="callout">
+    <strong>Automation boundary:</strong> This system is decision-support only. Human review is
+    required before any content action, and automatic content changes are not allowed.
+  </div>
+</section>
+
+<section id="data">
+  <h2>2. Data</h2>
+  <p>
+    The analysis uses the processed feature vector from the internship workflow. It contains
+    30,000 rows and 52 columns, representing anonymized content items across 32 clients.
+    The target is <code>is_declining_label</code>.
+  </p>
+  <div class="grid">
+    <div class="stat"><span class="muted">Rows</span><strong>30,000</strong></div>
+    <div class="stat"><span class="muted">Columns</span><strong>52</strong></div>
+    <div class="stat"><span class="muted">Clients</span><strong>32</strong></div>
+    <div class="stat"><span class="muted">Held-out clients</span><strong>6</strong></div>
+  </div>
+  <p>
+    The target distribution was 16,262 declining items and 13,738 non-declining items.
+    Identifier columns <code>content_id</code> and <code>client_id</code> were excluded from
+    modeling. The trend fields <code>trend_direction</code> and <code>trend_pct</code> were also
+    excluded from modeling.
+  </p>
+  <p class="small muted">
+    Public-safe framing: no client names, domains, URLs, private queries, credentials, or raw
+    private exports are presented here.
+  </p>
+</section>
+
+<section id="methodology">
+  <h2>3. Methodology</h2>
+  <h3>Label and features</h3>
+  <p>
+    The target is the provided <code>is_declining_label</code>. The model uses the prepared feature
+    vector while excluding the identifiers and selected trend fields listed above.
+  </p>
+
+  <h3>Baseline</h3>
+  <p>
+    The baseline is a transparent hand-written refresh score combining visibility, freshness risk,
+    position opportunity, and depth-gap signals. Its weighting was:
+    visibility 0.40, freshness risk 0.30, position opportunity 0.25, and depth gap 0.05.
+  </p>
+
+  <h3>Validation design</h3>
+  <p>
+    The model predictions contain 27,675 training rows and 2,325 held-out rows. The held-out set
+    contains 6 clients. The selected model was Random Forest, and every model-versus-baseline
+    comparison below uses the same held-out rows.
+  </p>
+
+  <h3>Leakage checks</h3>
+  <p>
+    The workflow explicitly checked that <code>content_id</code>, <code>client_id</code>,
+    <code>trend_direction</code>, and <code>trend_pct</code> were not used as model features.
+  </p>
+</section>
+
+<section id="results">
+  <h2>4. Results vs Baseline</h2>
+  <p>
+    The main evaluation metric is Precision@K: among the top K ranked items, the share carrying
+    the declining label. Higher values mean the ranking concentrated more labeled declining items
+    near the top of the review queue.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>K</th>
+        <th>Baseline Precision@K</th>
+        <th>Random Forest Precision@K</th>
+        <th>Baseline declining items</th>
+        <th>Random Forest declining items</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>10</td><td>0.20</td><td><strong>0.90</strong></td><td>2</td><td>9</td></tr>
+      <tr><td>25</td><td>0.16</td><td><strong>0.92</strong></td><td>4</td><td>23</td></tr>
+      <tr><td>50</td><td>0.24</td><td><strong>0.84</strong></td><td>12</td><td>42</td></tr>
+      <tr><td>100</td><td>0.36</td><td><strong>0.86</strong></td><td>36</td><td>86</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid">
+    <div class="stat"><span class="muted">Precision@10</span><strong>0.90</strong><span class="small">vs 0.20 baseline</span></div>
+    <div class="stat"><span class="muted">Precision@25</span><strong>0.92</strong><span class="small">vs 0.16 baseline</span></div>
+    <div class="stat"><span class="muted">Precision@50</span><strong>0.84</strong><span class="small">vs 0.24 baseline</span></div>
+    <div class="stat"><span class="muted">Precision@100</span><strong>0.86</strong><span class="small">vs 0.36 baseline</span></div>
+  </div>
+
+  <p>
+    On this held-out client split, the Random Forest measured higher Precision@K than the baseline
+    at all four tested queue sizes. These are measured results on this validation design and should
+    be interpreted as directional evidence for prioritization, not proof of future performance.
+  </p>
+</section>
+
+<section id="limitations">
+  <h2>5. Limitations & Honest Framing</h2>
+  <ul>
+    <li>The analysis does not estimate the causal impact of refreshing content.</li>
+    <li>The ranking identifies observed association with the supplied declining label; it does not prove why an item is declining.</li>
+    <li>Validation used 2,325 held-out rows from 6 clients, so generalization beyond this split should be tested before operational use.</li>
+    <li>Model probabilities are ranking signals and should not be treated as guaranteed probabilities of future decline.</li>
+    <li>The queue is intended for human review and decision-support, not automatic content changes.</li>
+    <li>Results may vary with data releases, preprocessing choices, feature definitions, and model-library versions.</li>
+  </ul>
+  <div class="callout">
+    <strong>Claim boundary:</strong> observed, measured, directional, decision-support.
+    This work does not claim to prove Google's ranking algorithm or the causal effect of a refresh.
+  </div>
+</section>
+
+<section id="recommendations">
+  <h2>6. Ranked Recommendations</h2>
+  <p>
+    The final action queue contains <strong>2,325 held-out items</strong>. Each item receives a
+    model ranking, a reason code, and a suggested human-review action.
+  </p>
+
+  <div class="action">
+    <strong>1. Visibility signal — 1,316 items</strong>
+    <p>Suggested action: review search visibility and position before deciding on a content change.</p>
+  </div>
+  <div class="action">
+    <strong>2. Recent decline signal — 911 items</strong>
+    <p>Suggested action: review recent performance and consider refresh only after human diagnosis.</p>
+  </div>
+  <div class="action">
+    <strong>3. Mixed or uncertain signal — 89 items</strong>
+    <p>Suggested action: manual diagnosis before action; the available signals do not provide a clear single reason.</p>
+  </div>
+  <div class="action">
+    <strong>4. Freshness signal — 9 items</strong>
+    <p>Suggested action: review content freshness and determine whether an update is appropriate.</p>
+  </div>
+
+  <p>
+    The recommended workflow is to start with the highest-ranked items, inspect the supplied
+    reason code and supporting signals, and then make a human decision about review, refresh,
+    monitoring, or no action.
+  </p>
+</section>
+
+<section id="artifacts">
+  <h2>7. Artifacts the Paper Embeds</h2>
+  <p>
+    The capstone workflow produced the evaluation table and reason-code distribution used in this
+    paper. The corresponding files are stored in the repository outputs.
+  </p>
+  <ul>
+    <li><code>w08_precision_at_k_results.csv</code> — model vs baseline Precision@K results.</li>
+    <li><code>w08_reason_code_distribution.csv</code> — ranked-queue reason-code counts.</li>
+    <li><code>work/notebooks/capstone.ipynb</code> — executable capstone analysis.</li>
+  </ul>
+</section>
+
+<section id="reproducibility">
+  <h2>8. Reproducibility</h2>
+  <p>
+    The analysis notebook and weekly assignment notebooks are committed under
+    <code>work/notebooks/</code>. The repository contains the workflow artifacts used to produce
+    the ranking, validation results, and paper content.
+  </p>
+  <p>
+    <a href="https://github.com/Ishwarsolanki-004/ML-internship-with-flyrank-ai">
+      View the GitHub repository
+    </a>
+  </p>
+</section>
+
+<section id="acknowledgments">
+  <h2>9. Acknowledgments & Data Credit</h2>
+  <p>
+    Built on the FlyRank ML Internship dataset. Data and internship context are credited to
+    <a href="https://flyrank.ai" target="_blank" rel="noopener">FlyRank</a>.
+  </p>
+  <p class="small muted">
+    This research paper is an educational, applied machine-learning project. It presents measured
+    results from the supplied workflow and keeps the decision boundary at human review.
+  </p>
+</section>
+
+<footer>
+  Refresh Opportunity Scoring · FlyRank ML Internship · Decision-support research
+</footer>
+
+</div>
+</body>
+</html>
