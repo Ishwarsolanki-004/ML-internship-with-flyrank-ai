@@ -1,8 +1,6 @@
 ---
----
 name: flyrank-data
-description: "FlyRank internship datasets, data gotchas, warehouse tables, panel warnings, access rules, and iteration rules. Load for every task that touches the data."
----
+description: The FlyRank internship datasets — the 30k-row starter CSV and its gotchas, the ~79M-row warehouse release tables and grains, panel warnings, access, and iteration rules. Load for EVERY task that touches the data. (Project-specific: delete this folder when reusing the skill library elsewhere.)
 ---
 
 # FlyRank internship data
